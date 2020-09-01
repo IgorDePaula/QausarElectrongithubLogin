@@ -1,7 +1,9 @@
-import { app, BrowserWindow, nativeTheme, session } from 'electron'
+import { app, BrowserWindow, nativeTheme, session, ipcRenderer, ipcMain } from 'electron'
 const login = require('oauth-electron')
 var querystring = require('querystring')
 var https = require('https')
+var fs = require('fs')
+const totalCode = null
 try {
   if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
     require('fs').unlinkSync(require('path').join(app.getPath('userData'), 'DevTools Extensions'))
@@ -17,16 +19,20 @@ if (process.env.PROD) {
 }
 
 let mainWindow
-
-
-function createWindow(){
+ipcMain.handle('some-name',(event, someArgument) => {
+  const result =  fs.readFileSync(__dirname + 'code.log', { encoding: 'utf8', flag: 'r' })
+  return result
+})
+function createWindow () {
+  // totalCode = fs.readFileSync(__dirname + 'code.log', { encoding: 'utf8', flag: 'r' })
+  console.log('totalcode', totalCode)
   var options = {
-    client_id: 'asdasd',
-    client_secret: '123123',
-    scopes: ['user:email', 'notifications'], // Scopes limit access for OAuth tokens.
-  };
+    client_id: '7sdfsdf',
+    client_secret: '9b419sdfsdfsdfsdf',
+    scopes: ['user:email', 'notifications'] // Scopes limit access for OAuth tokens.
+  }
 
-// Build the OAuth consent page URL
+  // Build the OAuth consent page URL
   var authWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -40,60 +46,75 @@ function createWindow(){
       // More info: /quasar-cli/developing-electron-apps/electron-preload-script
       // preload: path.resolve(__dirname, 'electron-preload.js')
     }
-  });
-  var githubUrl = 'https://github.com/login/oauth/authorize?';
+  })
+  var githubUrl = 'https://github.com/login/oauth/authorize?'
   var authUrl =
-    githubUrl + 'client_id=' + options.client_id + '&scope=' + options.scopes;
-  authWindow.loadURL(authUrl);
-  authWindow.show();
+    githubUrl + 'client_id=' + options.client_id + '&scope=' + options.scopes
+  authWindow.loadURL(authUrl)
+  authWindow.show()
 
-  function handleCallback(url) {
-    var raw_code = /code=(.+)/.exec(url) || null;
-    var code = raw_code && raw_code.length > 1 ? raw_code[1] : null;
-    var error = /\?error=(.+)\$/.exec(url);
+  function handleCallback (url) {
+    var raw_code = /code=(.+)/.exec(url) || null
+    var code = raw_code && raw_code.length > 1 ? raw_code[1] : null
+    var error = /\?error=(.+)\$/.exec(url)
 
     console.log('url', url)
-    console.log('raw_code',raw_code)
-    console.log('code1',code)
-    if ( error) {
+    console.log('raw_code', raw_code)
+    console.log('code1', code)
+    if (error) {
       // Close the browser if code found or error
-      authWindow.destroy();
+      authWindow.destroy()
     }
 
     // If there is a code, proceed to get token from github
     if (code) {
-      console.log('code',code)
-      //self.requestGithubToken(options, code);
+      // fs.writeFileSync(__dirname + 'code.log', code)
+      // console.log('code', code)
+      // self.requestGithubToken(options, code);
     } else if (error) {
       alert(
         "Oops! Something went wrong and we couldn't" +
         'log you in using Github. Please try again.'
-      );
+      )
     }
+    /* ipcMain.on('sync-message', (event, arg) => {
+      console.log('args', arg)
+      if (arg === 'Sent from main Window') {
+        event.sender.send('sync-reply', 'Yes hunie, I hear you loud and clear')
+      }
+    }) */
+
+
+    /* ipcMain.on('async-message', (event, arg) => {
+      console.log('async message')
+      if (arg === 'Async message baby') {
+        event.sender.send('async-reply', 'Yes hunie, I hear you loud and clear')
+      }
+    }) */
   }
 
-// Handle the response from GitHub - See Update from 4/12/2015
+  // Handle the response from GitHub - See Update from 4/12/2015
 
-  authWindow.webContents.on('will-navigate', function(event, url) {
-    handleCallback(url);
-  });
+  authWindow.webContents.on('will-navigate', function (event, url) {
+    handleCallback(url)
+  })
 
-  authWindow.webContents.on('did-get-redirect-request', function(
+  authWindow.webContents.on('did-get-redirect-request', function (
     event,
     oldUrl,
     newUrl
   ) {
-    handleCallback(newUrl);
-  });
+    handleCallback(newUrl)
+  })
 
-// Reset the authWindow on close
+  // Reset the authWindow on close
   authWindow.on(
     'close',
-    function() {
-      authWindow = null;
+    function () {
+      authWindow = null
     },
     false
-  );
+  )
 }
 app.on('ready', createWindow)
 
